@@ -1,12 +1,5 @@
 streamlit
-python-dotenv
 groq
 duckduckgo-search
 wikipedia
-arxiv
-deep-translator
-requests
-sympy
-PyPDF2
-transformers
-torch
+python-dotenv
