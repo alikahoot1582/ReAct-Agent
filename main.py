@@ -203,7 +203,7 @@ if query:
 st.markdown(
     """
     <div class="footer">
-        MADE BY MUHAMMAD ALI KAHOOT • 2024
+        MADE BY MUHAMMAD ALI KAHOOT • 2026
     </div>
     """,
     unsafe_allow_html=True
