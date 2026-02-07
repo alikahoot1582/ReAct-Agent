@@ -15,191 +15,146 @@ load_dotenv()
 # ---------------- UI Setup ----------------
 st.set_page_config(page_title="ReAct Knowledge Explorer", page_icon="⚖️", layout="wide")
 
-# Custom CSS for an Elegant Vibe
+# Custom Elegant CSS
 st.markdown("""
     <style>
-    /* Main Background and Text */
-    .stApp {
-        background-color: #f8f9fa;
-    }
-    
-    /* Elegant Header Banner */
+    .stApp { background-color: #fcfcfc; }
     .main-banner {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        color: #e94560;
-        padding: 30px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f1f5f9;
+        padding: 40px;
         margin: 20px auto;
         max-width: 1000px;
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 300;
         text-align: center;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 1px solid rgba(233, 69, 96, 0.2);
-        letter-spacing: 1px;
+        border-radius: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        border: 1px solid #334155;
+        letter-spacing: 2px;
     }
-
-    /* Sophisticated Pill */
     .step-pill {
         background: #ffffff;
-        color: #1a1a2e;
-        padding: 8px 25px;
+        color: #64748b;
+        padding: 10px 30px;
         border-radius: 50px;
-        font-weight: 500;
+        font-size: 12px;
+        font-weight: 600;
         text-align: center;
         width: fit-content;
-        margin: -15px auto 20px auto;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        font-family: 'Inter', sans-serif;
+        margin: -25px auto 30px auto;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        letter-spacing: 1px;
     }
-
-    /* Footer Style */
     .footer {
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
-        background: #1a1a2e;
-        color: #95a5a6;
+        background: #0f172a;
+        color: #94a3b8;
         text-align: center;
-        padding: 10px;
-        font-weight: 400;
-        font-size: 14px;
-        letter-spacing: 2px;
-        border-top: 1px solid #e94560;
+        padding: 15px;
+        font-size: 12px;
+        letter-spacing: 3px;
         z-index: 1000;
+        border-top: 1px solid #334155;
     }
+    .stExpander { border: none !important; box-shadow: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.header("Configuration")
+st.sidebar.header("Intelligence Settings")
 api_key = st.sidebar.text_input("Groq API Key", type="password") or os.getenv("GROQ_API_KEY", "")
 model_name = st.sidebar.selectbox(
-    "Model Selection",
-    ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "openai/gpt-oss-120b"],
-    index=1
+    "Engine Selection",
+    ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+    index=0
 )
-max_steps = st.sidebar.slider("Reasoning Depth", 4, 10, 4)
 
 # ---------------- Banner ----------------
-st.markdown(
-    '<div class="main-banner">RE-ACT KNOWLEDGE EXPLORER<br>'
-    '<span style="font-size: 14px; color: #95a5a6; font-weight: 400;">'
-    'Multi-Agent Research Intelligence Engine Engine</span></div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="main-banner">RE-ACT KNOWLEDGE EXPLORER</div>', unsafe_allow_html=True)
+st.markdown('<div class="step-pill">THINK • ACT • OBSERVE • CONCLUDE</div>', unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="step-pill">THINKING • ACTING • OBSERVING • CONCLUDING</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown("### 🔍 Enterprise Search Query")
-query = st.chat_input("Enter your research topic...")
-
-# ---------------- Tool Functions ----------------
-# (Functions remain the same as your original logic)
-def tool_web_search(query, k=4):
-    with DDGS() as ddg:
-        results = ddg.text(query, region="us-en", max_results=k)
-        return "\n".join([f"{r['title']} {r['href']}" for r in results if r]) or "No result found"
-
-def tool_wikipedia(query, sentences=2):
-    try:
-        pages = wikipedia.search(query, results=1)
-        if not pages: return "No Wikipedia page found"
-        return wikipedia.summary(pages[0], sentences=sentences)
-    except Exception as e:
-        return str(e)
-
-def tool_math(expr):
-    return str(sympy.simplify(expr))
-
-def tool_news(query):
-    with DDGS() as ddg:
-        results = ddg.news(query, region="us-en", max_results=3)
-        return "\n".join([f"{r['title']} {r['url']}" for r in results if r]) or "No news found"
-
-def tool_books(query):
-    with DDGS() as ddg:
-        results = ddg.text(query + " book", region="us-en", max_results=3)
-        return "\n".join([f"{r['title']} {r['href']}" for r in results if r]) or "No books found"
-
-def tool_translate(text):
-    return GoogleTranslator(source="auto", target="ur").translate(text)
-
-def tool_sentiment(text):
-    return pipeline("sentiment-analysis")(text)[0]
-
-def tool_arxiv(query):
-    try:
-        search = arxiv.Search(query=query, max_results=1)
-        paper = next(search.results(), None)
-        if not paper: return "No Arxiv paper found"
-        return f"{paper.title}\n{paper.entry_id}"
-    except Exception as e:
-        return str(e)
+query = st.chat_input("Enter your research objective...")
 
 # ---------------- Prompt ----------------
+# The critical fix: "DO NOT use built-in tools"
 SYSTEM_PROMPT = """
-You are a world-class research assistant.
-For every question, you MUST output exactly four steps before the Final Answer:
+You are a world-class research assistant. 
+IMPORTANT: You must respond ONLY in plain text. DO NOT attempt to use any built-in functions or tool-calling features.
 
-- Step 1 - Think: Explain what you will do next.
-- Step 2 - Observe: Record what information you have or tool output.
-- Step 3 - Act: Choose ONE tool (WebSearch, Wikipedia, Math, News, Books, Translate, Sentiment, Arxiv) and provide the exact query or text.
-- Step 4 - Conclude: Summarize what you learned.
+For every question, you MUST output exactly these five sections in order:
 
-Only after completing all four steps, give:
-Final Answer: <short, clear, professional answer in English>
+Step 1 - Think: <Internal thought process>
+Step 2 - Observe: <Current state of knowledge>
+Step 3 - Act: <Choose one: WebSearch, Wikipedia, Math, News, Books, Translate, Sentiment, Arxiv>
+Step 4 - Conclude: <Summary of findings>
+
+Final Answer: <Clear, professional conclusion>
+
+Follow this format strictly.
 """
 
-# ---------------- Agent ----------------
+# ---------------- Agent Logic ----------------
 def mini_agent(client, model, question):
-    convo = SYSTEM_PROMPT + "\nUser Question: " + question
+    try:
+        # We explicitly set tool_choice to None (if supported) or just rely on the prompt
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Research Question: {question}"},
+            ],
+            temperature=0.1, # Lower temperature for better formatting adherence
+            max_tokens=1000
+        )
 
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": convo},
-        ],
-        temperature=0.2,
-        max_tokens=800
-    )
+        content = resp.choices[0].message.content or ""
 
-    text = resp.choices[0].message.content or ""
+        # Extraction logic with fallback to "Not specified"
+        def extract(pattern, text):
+            match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+            return match.group(1).strip() if match else "Information not captured in this step."
 
-    # Regex for steps
-    thought = re.search(r"Step 1 - Think:(.*)", text)
-    observe = re.search(r"Step 2 - Observe:(.*)", text)
-    act = re.search(r"Step 3 - Act:(.*)", text)
-    conclude = re.search(r"Step 4 - Conclude:(.*)", text)
-    final = re.search(r"Final Answer:(.*)", text)
+        thought = extract(r"Step 1 - Think:(.*?)Step 2", content)
+        observe = extract(r"Step 2 - Observe:(.*?)Step 3", content)
+        act = extract(r"Step 3 - Act:(.*?)Step 4", content)
+        conclude = extract(r"Step 4 - Conclude:(.*?)Final Answer", content)
+        final = extract(r"Final Answer:(.*)", content)
 
-    # UI Rendering
-    with st.expander("📝 View Reasoning Process", expanded=True):
-        st.write(f"**Step 1 - Think:** {thought.group(1).strip() if thought else '...'}")
-        st.write(f"**Step 2 - Observe:** {observe.group(1).strip() if observe else '...'}")
-        st.write(f"**Step 3 - Act:** {act.group(1).strip() if act else '...'}")
-        st.write(f"**Step 4 - Conclude:** {conclude.group(1).strip() if conclude else '...'}")
+        # UI Display
+        with st.expander("🔍 VIEW REASONING CHAIN", expanded=True):
+            cols = st.columns(2)
+            with cols[0]:
+                st.markdown(f"**Step 1: Thought**\n\n{thought}")
+                st.markdown(f"**Step 2: Observation**\n\n{observe}")
+            with cols[1]:
+                st.markdown(f"**Step 3: Action**\n\n{act}")
+                st.markdown(f"**Step 4: Conclusion**\n\n{conclude}")
 
-    st.markdown(f"### 🎯 Final Synthesis")
-    st.info(final.group(1).strip() if final else "No synthesis produced.")
+        st.markdown("---")
+        st.markdown("### 🎯 Final Synthesis")
+        st.write(final)
+
+    except Exception as e:
+        st.error(f"Critical Error: {str(e)}")
+        if "tool_use_failed" in str(e):
+            st.warning("The model attempted to trigger an internal tool call. I've blocked the request to prevent a crash. Please try rephrasing or using a different model.")
 
 # ---------------- Run ----------------
 if query:
     st.chat_message("user").write(query)
     if not api_key:
-        st.error("Authentication required: Please provide a valid GROQ API key.")
+        st.error("Missing Credentials: Enter your Groq API Key in the sidebar.")
     else:
         client = Groq(api_key=api_key)
-        with st.spinner("Analyzing data streams..."):
+        with st.spinner("Executing Research Protocol..."):
             mini_agent(client, model_name, query)
 
-# ---------------- Elegant Footer ----------------
+# ---------------- Footer ----------------
 st.markdown(
     """
     <div class="footer">
